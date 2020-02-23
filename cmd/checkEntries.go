@@ -11,24 +11,26 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	toggl "github.com/BlackWebWolf/toggl-go"
 )
+func init() {
+	rootCmd.AddCommand(checkEntriesCmd)
 
+	// Here you will define your flags and configuration settings.
+	checkEntriesCmd.PersistentFlags().IntP("days", "d", 7, "Amount of days to check")
+
+}
 // checkEntriesCmd represents the checkEntries command
 var checkEntriesCmd = &cobra.Command{
 	Use:   "checkEntries",
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		check_entries(30)
+		days_set, _ := cmd.Flags().GetInt("days")
+
+		check_entries(days_set)
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(checkEntriesCmd)
 
-	// Here you will define your flags and configuration settings.
-	checkEntriesCmd.PersistentFlags().StringP("days", "d", "30", "Amount of days to check")
-
-}
 
 type TimeEntry struct {
 	id          int
@@ -48,13 +50,11 @@ func checkErr(err error) {
 }
 
 func check_entries(days int) {
-
 	days = -days
 	token := os.Getenv("API_TOKEN")
 	weekReport := getTogglReportData(token, days)
 	entries := constructTimeEntries(weekReport)
 
-	//fmt.Println(entries)
 	db, err := sql.Open("sqlite3", "database/time_entries.db")
 	checkErr(err)
 	prepare_database(db)
